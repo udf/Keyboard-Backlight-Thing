@@ -23,16 +23,6 @@ If $CmdLine[0] > 0 Then
 	_Log("Parent terminated")
 EndIf
 
-$aProcList = ProcessList("KeyboardBacklightServ.exe")
-If IsArray($aProcList) Then
-	For $i = 1 To $aProcList[0][0]
-		If $aProcList[$i][1] <> @AutoItPID Then
-			_Log("Killing rogue instance " & $aProcList[$i][1])
-			ProcessClose($aProcList[$i][1])
-		EndIf
-	Next
-EndIf
-
 Global $sDLLPathLED = @ScriptDir & "\LogitechLed.dll"
 LogiLedInit($sDLLPathLED)
 
@@ -77,6 +67,9 @@ Func _Exit()
 EndFunc   ;==>_Exit
 
 Func _RestartCheck()
+	; Due to a memory leak in older versions of logitechled.dll, we need to restart the process when the memory usage exceeds a specified limit
+	; Newer versions of the dll do not have this problem, but the brightness has only 10 levels, compared to the older 100 levels
+
 	$aMemory = ProcessGetStats()
 	_Log("Using " & $aMemory[0] & " bytes of memory, " & ($MAX_BYTES - $aMemory[0]) & " bytes to termination")
 

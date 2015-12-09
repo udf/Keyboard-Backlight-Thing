@@ -71,7 +71,7 @@ function updateBr()
 
 	local iMappedBr = map((val * 100) ^ 2, 0, 100^2, 2, 100)
 
-	return math.floor(iCurBr/3 + iMappedBr/3*2)
+	return math.floor(iCurBr*0.5 + iMappedBr*0.5)
 end
 
 function map(nVar, nMin1, nMax1, nMin2, nMax2)
