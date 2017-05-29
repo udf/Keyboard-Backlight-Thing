@@ -9,19 +9,27 @@ Opt("GUIOnEventMode", 1)
 #include <Misc.au3>
 #NoTrayIcon
 
-Global Const $MAX_BYTES = 104857600
+Global Const $MAX_BYTES = 50 * 1024 * 1024
 Global Const $sLogFile = @YEAR & @MON & @MDAY & @HOUR & @MIN & @SEC & ".log"
 _Log("Started with PID "  & @AutoItPID)
 
 If $CmdLine[0] > 0 Then
 	ProcessWaitClose($CmdLine[1], 5)
 
-	; Screw the system, kill the parent
-	_Log("Killing parent " & $CmdLine[1])
-	ProcessClose($CmdLine[1])
-	ProcessWaitClose($CmdLine[1], 5)
-	_Log("Parent terminated")
+	If ProcessExists($CmdLine[1]) Then
+		; Screw the system, kill the parent
+		_Log("Killing parent " & $CmdLine[1])
+		ProcessClose($CmdLine[1])
+		ProcessWaitClose($CmdLine[1], 5)
+		_Log("Parent terminated")
+	EndIf
 EndIf
+
+If _Singleton("Global\ KB_BK_Serv", 1+2) = 0 Then
+	MsgBox(16, @ScriptName & " : Error", "Instance of script already running.", 5)
+	Exit
+EndIf
+
 
 Global $sDLLPathLED = @ScriptDir & "\LogitechLed.dll"
 LogiLedInit($sDLLPathLED)
@@ -50,8 +58,7 @@ Func WM_COMMAND($hWnd, $iMsg, $wParam, $lParam)
 		Case $hInput
 			Switch _WinAPI_HiWord($wParam)
 				Case $EN_CHANGE
-					$iB = Int($lParam)
-					LogiLedSet($LED_KEYBOARD, $iB, $iB, $iB)
+					LogiLedSet($LED_KEYBOARD, Int($lParam), 0, 0)
 			EndSwitch
 	EndSwitch
 
@@ -74,9 +81,9 @@ Func _RestartCheck()
 	_Log("Using " & $aMemory[0] & " bytes of memory, " & ($MAX_BYTES - $aMemory[0]) & " bytes to termination")
 
 	If $aMemory[0] >= $MAX_BYTES Then
-		_Log("Commiting suicide...")
 		$iChildPID = Run(StringFormat('"%s" "%s" "%s"', @AutoItExe, @ScriptFullPath, @AutoItPID), @ScriptDir)
 		_Log("Spawned child with PID " & $iChildPID)
+		_Log("Commiting suicide...")
 		Exit
 	EndIf
 EndFunc
